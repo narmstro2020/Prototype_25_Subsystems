@@ -36,7 +36,7 @@ public class Robot extends TimedRobot {
         controller.a()
                 .whileTrue(commandIntake.createApplyVelocitySetpoint(
                         "15 RadPerSec",
-                        RadiansPerSecond.of(100)))
+                        RadiansPerSecond.of(300)))
                 .onFalse(commandIntake.createStop());
         controller.b()
                 .whileTrue(commandIntake.createApplyPositionSetpoint(

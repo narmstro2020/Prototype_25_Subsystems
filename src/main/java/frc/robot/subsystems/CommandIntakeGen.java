@@ -54,12 +54,10 @@ public class CommandIntakeGen {
                 .i(0.001)
                 .d(positionKd0)
                 .outputRange(-1, 1)
-                // .velocityFF(kFF0)
                 .feedbackSensor(kPrimaryEncoder)
                 .p(velocityKp0, ClosedLoopSlot.kSlot1)
                 .i(0.0, ClosedLoopSlot.kSlot1)
                 .d(0.0, ClosedLoopSlot.kSlot1)
-                .velocityFF(kFF0, ClosedLoopSlot.kSlot1)
                 .outputRange(-1, 1, ClosedLoopSlot.kSlot1)
                 .feedbackSensor(kPrimaryEncoder);
         closedLoopConfig0.maxMotion.maxVelocity(maxVelocity0);
