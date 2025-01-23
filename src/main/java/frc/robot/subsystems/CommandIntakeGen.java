@@ -2,18 +2,13 @@ package frc.robot.subsystems;
 
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.config.ClosedLoopConfig;
-import com.revrobotics.spark.config.EncoderConfig;
-import com.revrobotics.spark.config.SparkBaseConfig;
-import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.*;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
@@ -24,7 +19,7 @@ import static com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor.kPrim
 
 public class CommandIntakeGen {
 
-    public static CommandIntake create(){
+    public static CommandIntake create() {
 
         EncoderConfig encoderConfig0 = new EncoderConfig()
                 .positionConversionFactor(2 * Math.PI)
@@ -38,26 +33,38 @@ public class CommandIntakeGen {
         double ks0 = RobotBase.isReal() ? 0.13511 : 0.0;
         double ka0 = 0.001258;
         double kv0 = 0.01041741445692405834123602814802;
+        double kFF0 = 1.0 / (12.0 / kv0);
 
         LinearSystem<N2, N1, N2> linearSystem0 = LinearSystemId.createDCMotorSystem(kv0, ka0);
         DCMotorSim dcMotorSim0 = new DCMotorSim(linearSystem0, dcMotor0);
-
 
 
         SimpleMotorFeedforward motor0Feedforward = new SimpleMotorFeedforward(ks0, kv0, ka0, 0.020);
         double maxVelocity0 = motor0Feedforward.maxAchievableVelocity(12.0, 0.0);
         double maxAcceleration0 = motor0Feedforward.maxAchievableAcceleration(12.0, 0.0);
 
-        double kp0 = 0.0017206;
+        double velocityKp0 = 0.0017206;
+        double positionKp0 =2.0905;
+        double positionKd0 = 0.0097368;
+
 
 
         ClosedLoopConfig closedLoopConfig0 = new ClosedLoopConfig()
-                .p(kp0, ClosedLoopSlot.kSlot1)
+                .p(positionKp0)
+                .i(0)
+                .d(positionKd0)
+                .outputRange(-1, 1)
+                // .velocityFF(kFF0)
+                .feedbackSensor(kPrimaryEncoder)
+                .p(velocityKp0, ClosedLoopSlot.kSlot1)
                 .i(0.0, ClosedLoopSlot.kSlot1)
                 .d(0.0, ClosedLoopSlot.kSlot1)
+                .velocityFF(kFF0, ClosedLoopSlot.kSlot1)
                 .outputRange(-1, 1, ClosedLoopSlot.kSlot1)
                 .feedbackSensor(kPrimaryEncoder);
-
+        closedLoopConfig0.maxMotion.maxVelocity(maxVelocity0);
+        closedLoopConfig0.maxMotion.maxAcceleration(maxAcceleration0);
+        closedLoopConfig0.maxMotion.positionMode(MAXMotionConfig.MAXMotionPositionMode.kMAXMotionTrapezoidal);
         closedLoopConfig0.maxMotion.maxVelocity(maxVelocity0, ClosedLoopSlot.kSlot1);
         closedLoopConfig0.maxMotion.maxAcceleration(maxAcceleration0, ClosedLoopSlot.kSlot1);
 

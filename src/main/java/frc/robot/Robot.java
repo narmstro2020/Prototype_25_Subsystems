@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.subsystems.*;
 
+import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 
@@ -33,9 +34,20 @@ public class Robot extends TimedRobot {
 
         RobotModeTriggers.teleop().onTrue(commandIntake.createStop());
         controller.a()
-                .whileTrue(commandIntake.createApplySetpoint(
+                .whileTrue(commandIntake.createApplyVelocitySetpoint(
                         "15 RadPerSec",
-                        RadiansPerSecond.of(300)))
+                        RadiansPerSecond.of(100)))
+                .onFalse(commandIntake.createStop());
+        controller.b()
+                .whileTrue(commandIntake.createApplyPositionSetpoint(
+                        "50 Radians",
+                        Radians.of(50.0)))
+                .onFalse(commandIntake.createStop());
+        controller.x()
+                .whileTrue(commandIntake.createApplyPositionSetpoint(
+                        "0 Radians",
+                        Radians.of(0.0)
+                ))
                 .onFalse(commandIntake.createStop());
 
 
@@ -46,7 +58,6 @@ public class Robot extends TimedRobot {
         if (RobotBase.isSimulation()) {
             addPeriodic(commandIntake::simulationPeriodic, 0.01);
         }
-
 
 
     }
