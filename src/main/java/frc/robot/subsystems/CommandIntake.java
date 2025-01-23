@@ -36,6 +36,7 @@ public class CommandIntake implements Subsystem {
     private final DCMotorSim dcMotorSim0;
     private final TrapezoidProfile positionProfile;
     private final State goalState = new State();
+    private final State goalStateVelocity = new State();
     private final MutAngle intake0Position = Radians.mutable(0.0);
     private final MutAngularVelocity intake0Velocity = RadiansPerSecond.mutable(0.0);
     private final double maxAcceleration0;
@@ -54,7 +55,7 @@ public class CommandIntake implements Subsystem {
         double maxVelocity0 = sparkMax0Feedforward.maxAchievableVelocity(12.0, 0.0);
         this.maxAcceleration0 = sparkMax0Feedforward.maxAchievableAcceleration(12.0, 0.0);
         TrapezoidProfile.Constraints constraints = new TrapezoidProfile.Constraints(
-                maxAcceleration0, maxAcceleration0);
+                maxVelocity0, maxAcceleration0);
         positionProfile = new TrapezoidProfile(constraints);
 
         SmartDashboard.putNumber("Max Velocity", maxVelocity0);
@@ -74,6 +75,7 @@ public class CommandIntake implements Subsystem {
         sparkMax0.getClosedLoopController().setReference(nextVelocity, kMAXMotionVelocityControl, kSlot1, arbFeedforward, kVoltage);
         lastState.velocity = nextVelocity;
         lastState.position = sparkMax0.getEncoder().getPosition();
+
     }
 
     public void applyIntake0PositionSetpoint() {
@@ -88,6 +90,7 @@ public class CommandIntake implements Subsystem {
     private void stopIntake0() {
         controlMode = ControlMode.VELOCITY;
         goalState.velocity = 0.0;
+        sparkMax0.stopMotor();
     }
 
     private void stop() {

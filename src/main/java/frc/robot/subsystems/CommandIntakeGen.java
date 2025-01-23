@@ -51,7 +51,7 @@ public class CommandIntakeGen {
 
         ClosedLoopConfig closedLoopConfig0 = new ClosedLoopConfig()
                 .p(positionKp0)
-                .i(0)
+                .i(0.001)
                 .d(positionKd0)
                 .outputRange(-1, 1)
                 // .velocityFF(kFF0)
