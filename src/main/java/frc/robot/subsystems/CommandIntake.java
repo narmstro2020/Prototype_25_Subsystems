@@ -53,10 +53,6 @@ public class CommandIntake implements Subsystem {
         this.sparkMax0Sim = new SparkMaxSim(sparkMax0, dcMotor0);
         double maxVelocity0 = sparkMax0Feedforward.maxAchievableVelocity(12.0, 0.0);
         this.maxAcceleration0 = sparkMax0Feedforward.maxAchievableAcceleration(12.0, 0.0);
-        // Constraints constraints = Constraints.fromCharacteristics(
-        //         12.0,
-        //         sparkMax0Feedforward.getKv(),
-        //         sparkMax0Feedforward.getKa());
         TrapezoidProfile.Constraints constraints = new TrapezoidProfile.Constraints(
                 maxAcceleration0, maxAcceleration0);
         positionProfile = new TrapezoidProfile(constraints);

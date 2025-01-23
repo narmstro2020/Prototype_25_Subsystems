@@ -44,8 +44,8 @@ public class CommandIntakeGen {
         double maxAcceleration0 = motor0Feedforward.maxAchievableAcceleration(12.0, 0.0);
 
         double velocityKp0 = 0.0017206;
-        double positionKp0 =2.0905;
-        double positionKd0 = 0.0097368;
+        double positionKp0 = 0.82222;
+        double positionKd0 = 0.0035985;
 
 
 
