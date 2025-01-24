@@ -33,38 +33,23 @@ public class CommandIntakeGen {
         double ks0 = RobotBase.isReal() ? 0.13511 : 0.0;
         double ka0 = 0.001258;
         double kv0 = 0.01041741445692405834123602814802;
-        double kFF0 = 1.0 / (12.0 / kv0);
 
         LinearSystem<N2, N1, N2> linearSystem0 = LinearSystemId.createDCMotorSystem(kv0, ka0);
         DCMotorSim dcMotorSim0 = new DCMotorSim(linearSystem0, dcMotor0);
 
 
         SimpleMotorFeedforward motor0Feedforward = new SimpleMotorFeedforward(ks0, kv0, ka0, 0.020);
-        double maxVelocity0 = motor0Feedforward.maxAchievableVelocity(12.0, 0.0);
-        double maxAcceleration0 = motor0Feedforward.maxAchievableAcceleration(12.0, 0.0);
 
         double velocityKp0 = 0.0017206;
-        double positionKp0 = 0.82222;
-        double positionKd0 = 0.0035985;
 
 
 
         ClosedLoopConfig closedLoopConfig0 = new ClosedLoopConfig()
-                .p(positionKp0)
-                .i(0.001)
-                .d(positionKd0)
-                .outputRange(-1, 1)
-                .feedbackSensor(kPrimaryEncoder)
                 .p(velocityKp0, ClosedLoopSlot.kSlot1)
                 .i(0.0, ClosedLoopSlot.kSlot1)
                 .d(0.0, ClosedLoopSlot.kSlot1)
                 .outputRange(-1, 1, ClosedLoopSlot.kSlot1)
                 .feedbackSensor(kPrimaryEncoder);
-        closedLoopConfig0.maxMotion.maxVelocity(maxVelocity0);
-        closedLoopConfig0.maxMotion.maxAcceleration(maxAcceleration0);
-        closedLoopConfig0.maxMotion.positionMode(MAXMotionConfig.MAXMotionPositionMode.kMAXMotionTrapezoidal);
-        closedLoopConfig0.maxMotion.maxVelocity(maxVelocity0, ClosedLoopSlot.kSlot1);
-        closedLoopConfig0.maxMotion.maxAcceleration(maxAcceleration0, ClosedLoopSlot.kSlot1);
 
         SparkMax sparkMax0 = new SparkMax(16, kBrushless);
         SparkBaseConfig sparkBaseConfig0 = new SparkMaxConfig()

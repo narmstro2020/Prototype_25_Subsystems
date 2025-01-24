@@ -3,11 +3,9 @@ package frc.robot.subsystems;
 import com.revrobotics.sim.SparkMaxSim;
 import com.revrobotics.spark.SparkMax;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.MutAngle;
 import edu.wpi.first.units.measure.MutAngularVelocity;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -18,32 +16,26 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import static com.revrobotics.spark.ClosedLoopSlot.*;
 import static com.revrobotics.spark.SparkBase.ControlType.*;
 import static com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits.kVoltage;
-import static edu.wpi.first.math.trajectory.TrapezoidProfile.*;
-import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 public class CommandIntake implements Subsystem {
 
 
+    private final SlewRateLimiter velocityProfile;
+
     public enum ControlMode {
-        POSITION,
-        VELOCITY
+        VELOCITY,
+        STOP
     }
 
     private final SparkMax sparkMax0;
     private final SparkMaxSim sparkMax0Sim;
     private final SimpleMotorFeedforward sparkMax0Feedforward;
     private final DCMotorSim dcMotorSim0;
-    private final TrapezoidProfile positionProfile;
-    private final TrapezoidProfile velocityProfile;
-    private final State goalState = new State();
-    private final State goalStateVelocity = new State();
-    private final MutAngle intake0Position = Radians.mutable(0.0);
     private final MutAngularVelocity intake0Velocity = RadiansPerSecond.mutable(0.0);
-    private final double maxAcceleration0;
-    private State lastState = new State();
-    private State lastStateVelocity = new State();
-    private ControlMode controlMode = ControlMode.VELOCITY;
+    private final MutAngularVelocity angularVelocityGoal = RadiansPerSecond.mutable(0.0);
+    private final MutAngularVelocity angularVelocityState = RadiansPerSecond.mutable(0.0);
+    private ControlMode controlMode = ControlMode.STOP;
 
 
     public CommandIntake(final SparkMax sparkMax0,
@@ -55,57 +47,30 @@ public class CommandIntake implements Subsystem {
         this.dcMotorSim0 = dcMotorSim0;
         this.sparkMax0Sim = new SparkMaxSim(sparkMax0, dcMotor0);
         double maxVelocity0 = sparkMax0Feedforward.maxAchievableVelocity(12.0, 0.0);
-        this.maxAcceleration0 = sparkMax0Feedforward.maxAchievableAcceleration(12.0, 0.0);
-        TrapezoidProfile.Constraints constraints = new TrapezoidProfile.Constraints(
-                maxVelocity0, maxAcceleration0);
-        TrapezoidProfile.Constraints velocityConstraints = new TrapezoidProfile.Constraints(
-                maxAcceleration0, Double.POSITIVE_INFINITY);
-        positionProfile = new TrapezoidProfile(constraints);
-        velocityProfile = new TrapezoidProfile(velocityConstraints);
+        double maxAcceleration0 = sparkMax0Feedforward.maxAchievableAcceleration(12.0, 0.0);
+
+        velocityProfile = new SlewRateLimiter(maxAcceleration0);
 
         SmartDashboard.putNumber("Max Velocity", maxVelocity0);
         SmartDashboard.putNumber("Max Acceleration", maxAcceleration0);
     }
 
     private void updateTelemetry() {
-        intake0Position.mut_setMagnitude(sparkMax0.getEncoder().getPosition());
         intake0Velocity.mut_setMagnitude(sparkMax0.getEncoder().getVelocity());
-        SmartDashboard.putNumber("Position", intake0Position.baseUnitMagnitude());
         SmartDashboard.putNumber("Velocity", intake0Velocity.baseUnitMagnitude());
     }
 
     private void applyIntake0VelocitySetpoint() {
-        // double nextVelocity = goalState.velocity;
-        // double arbFeedforward = sparkMax0Feedforward.getKs() * Math.signum(nextVelocity);
-        // sparkMax0.getClosedLoopController().setReference(nextVelocity, kMAXMotionVelocityControl, kSlot1, arbFeedforward, kVoltage);
-
-
-        double lastVelocity = lastStateVelocity.position;
-        lastStateVelocity = velocityProfile.calculate(0.010, lastStateVelocity, goalStateVelocity);
-        double nextVelocity = lastStateVelocity.position;
-        double arbFeedforward = sparkMax0Feedforward.calculateWithVelocities(lastVelocity, nextVelocity);
+        double currentVelocity = angularVelocityState.baseUnitMagnitude();
+        double nextVelocity = velocityProfile.calculate(angularVelocityGoal.baseUnitMagnitude());
+        angularVelocityState.mut_setMagnitude(nextVelocity);
+        double arbFeedforward = sparkMax0Feedforward.calculateWithVelocities(currentVelocity, nextVelocity);
         sparkMax0.getClosedLoopController().setReference(nextVelocity, kVelocity, kSlot1, arbFeedforward, kVoltage);
-        lastState.velocity = nextVelocity;
-        lastState.position = sparkMax0.getEncoder().getPosition();
-    }
-
-    public void applyIntake0PositionSetpoint() {
-        double lastVelocity = lastState.velocity;
-        lastStateVelocity.position = lastVelocity;
-        lastStateVelocity.velocity = 0.0;
-        lastState = positionProfile.calculate(0.010, lastState, goalState);
-        double nextVelocity = lastState.velocity;
-        double nextPosition = lastState.position;
-        double arbFeedforward = sparkMax0Feedforward.calculateWithVelocities(lastVelocity, nextVelocity);
-        sparkMax0.getClosedLoopController().setReference(nextPosition, kPosition, kSlot0, arbFeedforward, kVoltage);
-        lastStateVelocity.velocity = 0.0;
-        lastStateVelocity.position = sparkMax0.getEncoder().getVelocity();
     }
 
     private void stopIntake0() {
-        controlMode = ControlMode.VELOCITY;
-        goalStateVelocity.position = 0.0;
-        goalStateVelocity.velocity = 0.0;
+        sparkMax0.stopMotor();
+        angularVelocityState.mut_replace(sparkMax0.getEncoder().getVelocity(), RadiansPerSecond);
     }
 
     private void stop() {
@@ -113,11 +78,10 @@ public class CommandIntake implements Subsystem {
     }
 
     private void updateIntake0Sim() {
-        double voltage = sparkMax0.getAppliedOutput() * (12.0);
+        double voltage = sparkMax0Sim.getAppliedOutput() * sparkMax0Sim.getBusVoltage();
         dcMotorSim0.setInputVoltage(voltage);
         dcMotorSim0.update(0.01);
         sparkMax0Sim.iterate(dcMotorSim0.getAngularVelocityRadPerSec(), 12.0, 0.01);
-
     }
 
     @Override
@@ -126,7 +90,7 @@ public class CommandIntake implements Subsystem {
         if (controlMode == ControlMode.VELOCITY) {
             applyIntake0VelocitySetpoint();
         } else {
-            applyIntake0PositionSetpoint();
+            stop();
         }
     }
 
@@ -147,23 +111,17 @@ public class CommandIntake implements Subsystem {
     }
 
     public Command createStop() {
-        return runOnce(this::stop).withName("Stop");
+        return runOnce(() -> {
+            controlMode = ControlMode.STOP;
+            angularVelocityGoal.mut_replace(0.0, RadiansPerSecond);
+        }).withName("Stop");
     }
 
     public Command createApplyVelocitySetpoint(String name, AngularVelocity motor0Setpoint) {
         return runOnce(() -> {
             controlMode = ControlMode.VELOCITY;
-            goalStateVelocity.position = motor0Setpoint.baseUnitMagnitude();
-            goalStateVelocity.velocity = 0.0;
+            angularVelocityGoal.mut_replace(motor0Setpoint.baseUnitMagnitude(), RadiansPerSecond);
         }).withName(name);
-    }
-
-    public Command createApplyPositionSetpoint(String name, Angle motor0Setpoint) {
-        return runOnce(() -> {
-            controlMode = ControlMode.POSITION;
-            goalState.position = motor0Setpoint.baseUnitMagnitude();
-            goalState.velocity = 0.0;
-        });
     }
 
 

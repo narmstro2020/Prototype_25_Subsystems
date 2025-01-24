@@ -14,40 +14,24 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.subsystems.*;
 
-import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 
 public class Robot extends TimedRobot {
 
-    private final CommandXboxController controller = new CommandXboxController(0);
-
     public Robot() {
         CommandIntake commandIntake = CommandIntakeGen.create();
         CommandClaw commandClaw = CommandClawGen.create();
-        // controller.a().onTrue(commandClaw.createToggle0());
-        // controller.b().onTrue(commandClaw.createToggle1());
-        // controller.x().onTrue(commandClaw.createToggle2());
 
         PowerDistribution pdh = new PowerDistribution(1, PowerDistribution.ModuleType.kRev);
         SmartDashboard.putData("Power Distribution", pdh);
 
         RobotModeTriggers.teleop().onTrue(commandIntake.createStop());
+        CommandXboxController controller = new CommandXboxController(0);
         controller.a()
                 .whileTrue(commandIntake.createApplyVelocitySetpoint(
                         "15 RadPerSec",
                         RadiansPerSecond.of(300)))
-                .onFalse(commandIntake.createStop());
-        controller.b()
-                .whileTrue(commandIntake.createApplyPositionSetpoint(
-                        "50 Radians",
-                        Radians.of(50.0)))
-                .onFalse(commandIntake.createStop());
-        controller.x()
-                .whileTrue(commandIntake.createApplyPositionSetpoint(
-                        "0 Radians",
-                        Radians.of(0.0)
-                ))
                 .onFalse(commandIntake.createStop());
 
 
